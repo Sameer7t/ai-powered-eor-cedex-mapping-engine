@@ -241,30 +241,91 @@ document.addEventListener('DOMContentLoaded', () => {
       metricConfidence.textContent = '100%';
     }
 
-    // Configure Download Buttons
-    if (result.success_report_file) {
-      downloadSuccessBtn.disabled = false;
-      downloadSuccessBtn.onclick = () => {
-        window.open(`/api/download-report/${result.success_report_file}`, '_blank');
-      };
-    } else {
-      downloadSuccessBtn.disabled = true;
-    }
-
-    if (result.failed_report_file) {
-      downloadFailedBtn.disabled = false;
-      downloadFailedBtn.onclick = () => {
-        window.open(`/api/download-report/${result.failed_report_file}`, '_blank');
-      };
-    } else {
-      downloadFailedBtn.disabled = true;
-    }
+    // Recalculate metrics and dynamic export files
+    syncMetricsAndExports(result);
 
     // Render Invoices Table
     renderInvoicesList(currentInvoices);
 
     // Smooth scroll to results
     resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Synchronize live job counts and dynamic Excel workbooks
+  async function syncMetricsAndExports(initialResult = null) {
+    let totalJobs = 0;
+    let mappedJobs = 0;
+    let reviewNeeded = 0;
+
+    currentInvoices.forEach(inv => {
+      (inv.jobs || []).forEach(job => {
+        totalJobs++;
+        const isMapped = (job.status === 'mapped' || job.status === 'reviewed') && !job.needs_human_review;
+        if (isMapped) {
+          mappedJobs++;
+        } else {
+          reviewNeeded++;
+        }
+      });
+    });
+
+    metricSuccess.textContent = mappedJobs;
+    metricReview.textContent = reviewNeeded;
+
+    if (totalJobs > 0) {
+      const pct = Math.round((mappedJobs / totalJobs) * 100);
+      metricConfidence.textContent = `${pct}%`;
+    }
+
+    // If initialResult already gave report files and no subsequent edits happened
+    if (initialResult && initialResult.success_report_file) {
+      downloadSuccessBtn.disabled = false;
+      downloadSuccessBtn.onclick = () => {
+        window.open(`/api/download-report/${initialResult.success_report_file}`, '_blank');
+      };
+
+      if (initialResult.failed_report_file && reviewNeeded > 0) {
+        downloadFailedBtn.disabled = false;
+        downloadFailedBtn.onclick = () => {
+          window.open(`/api/download-report/${initialResult.failed_report_file}`, '_blank');
+        };
+      } else {
+        downloadFailedBtn.disabled = true;
+      }
+      return;
+    }
+
+    // Otherwise generate or refresh workbooks dynamically via server
+    try {
+      const res = await fetch('/api/generate-reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoices: currentInvoices }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success_report_file) {
+          downloadSuccessBtn.disabled = false;
+          downloadSuccessBtn.onclick = () => {
+            window.open(`/api/download-report/${data.success_report_file}`, '_blank');
+          };
+        } else {
+          downloadSuccessBtn.disabled = (mappedJobs === 0);
+        }
+
+        if (data.failed_report_file && reviewNeeded > 0) {
+          downloadFailedBtn.disabled = false;
+          downloadFailedBtn.onclick = () => {
+            window.open(`/api/download-report/${data.failed_report_file}`, '_blank');
+          };
+        } else {
+          downloadFailedBtn.disabled = true;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to sync report exports:', err);
+    }
   }
 
   function renderInvoicesList(invoices) {
@@ -445,9 +506,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
-      setTimeout(() => {
+      setTimeout(async () => {
         closeReviewModal();
         renderInvoicesList(currentInvoices);
+        await syncMetricsAndExports();
         fetchReferenceCounts();
       }, 700);
     } catch (err) {

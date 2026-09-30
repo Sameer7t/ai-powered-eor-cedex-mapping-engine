@@ -42,5 +42,32 @@ class ServerApiTests(unittest.TestCase):
         self.assertGreater(len(data["invoices"]), 0)
 
 
+    def test_generate_reports_endpoint(self):
+        sample_invoice = {
+            "container_id": "TEST1234567",
+            "container_type": "22K1",
+            "jobs": [
+                {
+                    "job_id": 1,
+                    "location": "AFXX",
+                    "component": "YXT",
+                    "repair": "AX",
+                    "damage": "DY",
+                    "status": "mapped",
+                    "cedex_code": "AFXX YXT AX DY",
+                    "manhour": 1.0,
+                    "labour_cost": 50.0,
+                    "material_cost_aed": 0.0,
+                }
+            ],
+        }
+        response = self.client.post("/api/generate-reports", json={"invoices": [sample_invoice]})
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data["success"])
+        self.assertIsNotNone(data["success_report_file"])
+        self.assertTrue(data["all_mapped"])
+
+
 if __name__ == "__main__":
     unittest.main()

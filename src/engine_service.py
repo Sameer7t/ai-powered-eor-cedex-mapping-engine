@@ -190,44 +190,88 @@ def process_uploaded_document(file_path: str, filename: str = "", api_key: Optio
     if not estimates:
         raise ValueError("No valid repair estimates identified in the document.")
 
-    success_invoices = []
-    failed_invoices = []
     all_invoices = []
-
     for est in estimates:
         invoice = process_single_estimate_data(est, api_key=api_key)
         all_invoices.append(invoice)
 
-        has_failures = any(
-            j.get("status") in ["unmapped", "skipped"] or j.get("needs_human_review")
-            for j in invoice.get("jobs", [])
-        )
-
-        if has_failures:
-            failed_invoices.append(invoice)
-        else:
-            success_invoices.append(invoice)
-
-    # Generate master Excel workbooks
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    session_id = uuid.uuid4().hex[:8]
-    success_path = os.path.join(OUTPUT_DIR, f"SUCCESS_{session_id}.xlsx")
-    failed_path = os.path.join(OUTPUT_DIR, f"FAILED_DLQ_{session_id}.xlsx")
-
-    if success_invoices:
-        generate_excel_report(success_invoices, success_path)
-    if failed_invoices:
-        generate_excel_report(failed_invoices, failed_path)
+    reports = create_report_workbooks(all_invoices, prefix="DOC")
 
     return {
         "success": True,
         "filename": filename or os.path.basename(file_path),
         "total_estimates": len(all_invoices),
-        "success_count": len(success_invoices),
-        "review_count": len(failed_invoices),
+        "success_count": reports["mapped_jobs_count"],
+        "review_count": reports["unmapped_jobs_count"],
         "invoices": all_invoices,
-        "success_report_file": os.path.basename(success_path) if success_invoices else None,
-        "failed_report_file": os.path.basename(failed_path) if failed_invoices else None,
+        "success_report_file": reports["success_report_file"],
+        "failed_report_file": reports["failed_report_file"],
+        "all_mapped": reports["all_mapped"],
+    }
+
+
+def create_report_workbooks(invoices: list[dict], prefix: str = "REPORT") -> dict:
+    """
+    Generates Success and DLQ Excel workbooks based on job statuses:
+    - All mapped and reviewed jobs are included in the Success workbook.
+    - Unmapped / review-needed jobs are included in the DLQ workbook.
+    """
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    session_id = uuid.uuid4().hex[:8]
+
+    success_invoices = []
+    failed_invoices = []
+
+    total_jobs = 0
+    mapped_jobs_count = 0
+    unmapped_jobs_count = 0
+
+    for inv in invoices:
+        jobs = inv.get("jobs", [])
+        total_jobs += len(jobs)
+
+        mapped_jobs = [
+            j for j in jobs
+            if j.get("status") in ["mapped", "reviewed"] and not j.get("needs_human_review")
+        ]
+        unmapped_jobs = [
+            j for j in jobs
+            if j.get("status") in ["unmapped", "skipped"] or j.get("needs_human_review")
+        ]
+
+        mapped_jobs_count += len(mapped_jobs)
+        unmapped_jobs_count += len(unmapped_jobs)
+
+        if mapped_jobs:
+            inv_success = dict(inv)
+            inv_success["jobs"] = mapped_jobs
+            success_invoices.append(inv_success)
+
+        if unmapped_jobs:
+            inv_failed = dict(inv)
+            inv_failed["jobs"] = unmapped_jobs
+            failed_invoices.append(inv_failed)
+
+    success_filename = None
+    failed_filename = None
+
+    if success_invoices:
+        success_path = os.path.join(OUTPUT_DIR, f"{prefix}_SUCCESS_{session_id}.xlsx")
+        generate_excel_report(success_invoices, success_path)
+        success_filename = os.path.basename(success_path)
+
+    if failed_invoices:
+        failed_path = os.path.join(OUTPUT_DIR, f"{prefix}_DLQ_{session_id}.xlsx")
+        generate_excel_report(failed_invoices, failed_path)
+        failed_filename = os.path.basename(failed_path)
+
+    return {
+        "success_report_file": success_filename,
+        "failed_report_file": failed_filename,
+        "total_jobs": total_jobs,
+        "mapped_jobs_count": mapped_jobs_count,
+        "unmapped_jobs_count": unmapped_jobs_count,
+        "all_mapped": (unmapped_jobs_count == 0 and total_jobs > 0),
     }
 
 

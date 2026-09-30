@@ -22,6 +22,7 @@ from engine_service import (
     process_single_estimate_data,
     execute_human_mapping_review,
     get_demo_samples,
+    create_report_workbooks,
     OUTPUT_DIR,
 )
 from excel_report import generate_excel_report
@@ -144,36 +145,18 @@ async def process_demo_sample(
 
     try:
         invoice = process_single_estimate_data(estimate_data, api_key=x_gemini_key)
-
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        import uuid
-        demo_id = uuid.uuid4().hex[:6]
-        success_filename = f"DEMO_{sample_type.upper()}_SUCCESS_{demo_id}.xlsx"
-        failed_filename = f"DEMO_{sample_type.upper()}_DLQ_{demo_id}.xlsx"
-
-        success_path = os.path.join(OUTPUT_DIR, success_filename)
-        failed_path = os.path.join(OUTPUT_DIR, failed_filename)
-
-        has_failures = any(
-            j.get("status") in ["unmapped", "skipped"] or j.get("needs_human_review")
-            for j in invoice.get("jobs", [])
-        )
-
-        if has_failures:
-            generate_excel_report([invoice], failed_path)
-            generate_excel_report([invoice], success_path)
-        else:
-            generate_excel_report([invoice], success_path)
+        reports = create_report_workbooks([invoice], prefix=f"DEMO_{sample_type.upper()}")
 
         return {
             "success": True,
             "filename": f"synthetic_{sample_type}_demo.xlsx",
             "total_estimates": 1,
-            "success_count": 0 if has_failures else 1,
-            "review_count": 1 if has_failures else 0,
+            "success_count": reports["mapped_jobs_count"],
+            "review_count": reports["unmapped_jobs_count"],
             "invoices": [invoice],
-            "success_report_file": success_filename,
-            "failed_report_file": failed_filename if has_failures else None,
+            "success_report_file": reports["success_report_file"],
+            "failed_report_file": reports["failed_report_file"],
+            "all_mapped": reports["all_mapped"],
         }
     except Exception as e:
         print(f"[API] Error running demo: {e}")
@@ -181,6 +164,20 @@ async def process_demo_sample(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error executing demo: {str(e)}",
         )
+
+
+class GenerateReportsRequest(BaseModel):
+    invoices: list[dict]
+
+
+@app.post("/api/generate-reports")
+async def generate_dynamic_reports(payload: GenerateReportsRequest):
+    """Dynamically generates and updates Excel reports whenever jobs are updated or reviewed in the UI."""
+    reports = create_report_workbooks(payload.invoices, prefix="SYNC")
+    return {
+        "success": True,
+        **reports,
+    }
 
 
 class HumanReviewRequest(BaseModel):

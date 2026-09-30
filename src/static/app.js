@@ -127,28 +127,42 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     fileDropzone.classList.remove('dragover');
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      uploadFile(e.dataTransfer.files[0]);
+      uploadFiles(Array.from(e.dataTransfer.files));
     }
   });
 
   fileInput.addEventListener('change', () => {
     if (fileInput.files && fileInput.files.length > 0) {
-      uploadFile(fileInput.files[0]);
+      uploadFiles(Array.from(fileInput.files));
     }
   });
 
-  // 4. File Upload Request
-  async function uploadFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['pdf', 'xlsx', 'xls'].includes(ext)) {
-      alert('Please upload a PDF (.pdf) or Excel (.xlsx, .xls) document.');
+  // 4. Batch & Multi-file Upload Request
+  async function uploadFiles(files) {
+    const validExtensions = ['pdf', 'xlsx', 'xls'];
+    const validFiles = files.filter(f => {
+      const ext = f.name.split('.').pop().toLowerCase();
+      return validExtensions.includes(ext);
+    });
+
+    if (validFiles.length === 0) {
+      alert('Please upload PDF (.pdf) or Excel (.xlsx, .xls) documents.');
       return;
     }
 
-    setProcessing(true, 'Extracting Document Content...', `Ingesting ${file.name} with layout preservation.`);
+    const title = validFiles.length === 1
+      ? `Processing ${validFiles[0].name}...`
+      : `Processing batch of ${validFiles.length} files...`;
+    const subtitle = validFiles.length === 1
+      ? 'Parsing estimate lines and standardizing CEDEX codes...'
+      : `Extracting: ${validFiles.map(f => f.name).join(', ')}`;
+
+    setProcessing(true, title, subtitle);
 
     const formData = new FormData();
-    formData.append('file', file);
+    validFiles.forEach(f => {
+      formData.append('files', f);
+    });
 
     const headers = {};
     if (sessionApiKey) {
@@ -170,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const result = await res.json();
       renderResults(result);
     } catch (err) {
-      alert(`Error processing file: ${err.message}`);
+      alert(`Error processing files: ${err.message}`);
     } finally {
       setProcessing(false);
       fileInput.value = '';
@@ -351,6 +365,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="container-badge">${inv.container_id || 'UNKNOWN'}</span>
             <span class="pill ${routePillClass}">${inv.route || 'tank'} route</span>
             <span class="pill ${statusPillClass}">${statusText}</span>
+            ${inv.source_file ? `<span class="pill" style="background: var(--bg-hover); color: var(--text-muted); font-size: 0.68rem; text-transform: none;">📁 ${escapeHtml(inv.source_file)}</span>` : ''}
           </div>
           <div class="invoice-meta">
             <div><strong>ISO Type:</strong> ${inv.container_type || '22K1'}</div>

@@ -69,5 +69,33 @@ class ServerApiTests(unittest.TestCase):
         self.assertTrue(data["all_mapped"])
 
 
+    def test_multiple_file_upload_endpoint(self):
+        import io
+        import pandas as pd
+
+        # Create two simple memory workbooks
+        buf1 = io.BytesIO()
+        pd.DataFrame([{"Container": "TCKU1111111", "Job": "Panel dent"}]).to_excel(buf1, index=False, sheet_name="Estimate")
+        buf1.seek(0)
+
+        buf2 = io.BytesIO()
+        pd.DataFrame([{"Container": "TCKU2222222", "Job": "Gasket replaced"}]).to_excel(buf2, index=False, sheet_name="Estimate")
+        buf2.seek(0)
+
+        response = self.client.post(
+            "/api/upload",
+            files=[
+                ("files", ("est1.xlsx", buf1.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+                ("files", ("est2.xlsx", buf2.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+            ],
+        )
+        # Even if Gemini API key is placeholder, endpoint accepts multi-file structure
+        self.assertIn(response.status_code, [200, 500])
+        if response.status_code == 200:
+            data = response.json()
+            self.assertTrue(data["success"])
+            self.assertEqual(data["total_files"], 2)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -19,6 +19,7 @@ if BASE_DIR not in sys.path:
 from data_loader import get_cedex_sheet, get_damage_codes, get_iso_equipment_group
 from engine_service import (
     process_uploaded_document,
+    process_multiple_documents,
     process_single_estimate_data,
     execute_human_mapping_review,
     get_demo_samples,
@@ -84,43 +85,57 @@ async def get_reference_stats():
 
 
 @app.post("/api/upload")
-async def upload_document(
-    file: UploadFile = File(...),
+async def upload_documents(
+    files: Optional[list[UploadFile]] = File(default=None),
+    file: Optional[UploadFile] = File(default=None),
     x_gemini_key: Optional[str] = Header(None, alias="X-Gemini-Key"),
 ):
-    filename = file.filename or "uploaded_estimate"
-    ext = os.path.splitext(filename)[1].lower()
+    upload_list: list[UploadFile] = []
+    if files:
+        upload_list.extend(files)
+    if file:
+        upload_list.append(file)
 
-    if ext not in [".pdf", ".xlsx", ".xls"]:
+    if not upload_list:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Unsupported format '{ext}'. Please upload .pdf or .xlsx/.xls files.",
+            detail="No files provided for upload.",
         )
 
-    # Save to temp file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        temp_path = temp_file.name
-
+    temp_items: list[tuple[str, str]] = []
     try:
-        result = process_uploaded_document(
-            file_path=temp_path,
-            filename=filename,
-            api_key=x_gemini_key,
-        )
+        for f in upload_list:
+            fname = f.filename or "uploaded_estimate"
+            ext = os.path.splitext(fname)[1].lower()
+            if ext not in [".pdf", ".xlsx", ".xls"]:
+                continue
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as temp_file:
+                shutil.copyfileobj(f.file, temp_file)
+                temp_items.append((temp_file.name, fname))
+
+        if not temp_items:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No supported .pdf or .xlsx/.xls files found in the upload batch.",
+            )
+
+        result = process_multiple_documents(temp_items, api_key=x_gemini_key)
         return result
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"[API] Error processing {filename}: {e}")
+        print(f"[API] Error processing upload batch: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e),
         )
     finally:
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except OSError:
-                pass
+        for t_path, _ in temp_items:
+            if os.path.exists(t_path):
+                try:
+                    os.remove(t_path)
+                except OSError:
+                    pass
 
 
 class DemoRequest(BaseModel):

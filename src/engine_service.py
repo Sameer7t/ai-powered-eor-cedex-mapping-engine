@@ -129,7 +129,7 @@ def process_single_estimate_data(estimate_data: dict, api_key: Optional[str] = N
             jobs_split = categorize_list(job_descriptions, classification_data)
             n_jobs = process_normal_jobs(jobs_split["normal_jobs"])
             s_jobs = process_special_jobs(jobs_split["special_jobs"])
-            mapped_jobs = cedex_mapping(n_jobs, route="tank")
+            mapped_jobs = cedex_mapping(n_jobs, container_route="tank")
             sorted_jobs = arranging_by_id(mapped_jobs, s_jobs)
         except Exception as e:
             print(f"[Engine] Tank classification fallback due to: {e}")
@@ -148,7 +148,8 @@ def process_single_estimate_data(estimate_data: dict, api_key: Optional[str] = N
                     "job_description": item.get("job_description", ""),
                     "status": "unmapped",
                 })
-            sorted_jobs = cedex_mapping(n_jobs, route="tank")
+            mapped_jobs = cedex_mapping(n_jobs, container_route="tank")
+            sorted_jobs = arranging_by_id(mapped_jobs, [])
 
     # Add translated description and human review recommendation flags
     review_needed_count = 0
@@ -176,30 +177,48 @@ def process_single_estimate_data(estimate_data: dict, api_key: Optional[str] = N
     return invoice
 
 
-def process_uploaded_document(file_path: str, filename: str = "", api_key: Optional[str] = None) -> dict:
+def process_multiple_documents(file_items: list[tuple[str, str]], api_key: Optional[str] = None) -> dict:
     """
-    Ingests an uploaded document, parses all container estimates, runs
-    classification and CEDEX code mapping, and prepares report downloads.
+    Ingests multiple uploaded documents, aggregates parsed estimates across all files,
+    standardizes CEDEX codes, and generates a unified batch workbook.
+    `file_items`: list of (file_path, original_filename) tuples.
     """
-    text = extract_document_text(file_path)
-    if not text or not text.strip():
-        raise ValueError(f"Could not extract any readable text from {filename or file_path}")
-
-    # Use Gemini to extract structured estimates from document text
-    estimates = process_estimate(text)
-    if not estimates:
-        raise ValueError("No valid repair estimates identified in the document.")
-
     all_invoices = []
-    for est in estimates:
-        invoice = process_single_estimate_data(est, api_key=api_key)
-        all_invoices.append(invoice)
+    processed_filenames = []
+    errors = []
 
-    reports = create_report_workbooks(all_invoices, prefix="DOC")
+    for file_path, filename in file_items:
+        try:
+            text = extract_document_text(file_path)
+            if not text or not text.strip():
+                errors.append(f"{filename}: No readable text found.")
+                continue
+
+            estimates = process_estimate(text)
+            if not estimates:
+                errors.append(f"{filename}: No valid repair estimates found.")
+                continue
+
+            for est in estimates:
+                inv = process_single_estimate_data(est, api_key=api_key)
+                inv["source_file"] = filename
+                all_invoices.append(inv)
+
+            processed_filenames.append(filename)
+        except Exception as e:
+            print(f"[Engine] Error processing document {filename}: {e}")
+            errors.append(f"{filename}: {str(e)}")
+
+    if not all_invoices and errors:
+        raise ValueError("; ".join(errors))
+
+    reports = create_report_workbooks(all_invoices, prefix="BATCH")
 
     return {
         "success": True,
-        "filename": filename or os.path.basename(file_path),
+        "filename": ", ".join(processed_filenames) if processed_filenames else "batch_upload",
+        "filenames": processed_filenames,
+        "total_files": len(processed_filenames),
         "total_estimates": len(all_invoices),
         "success_count": reports["mapped_jobs_count"],
         "review_count": reports["unmapped_jobs_count"],
@@ -207,7 +226,14 @@ def process_uploaded_document(file_path: str, filename: str = "", api_key: Optio
         "success_report_file": reports["success_report_file"],
         "failed_report_file": reports["failed_report_file"],
         "all_mapped": reports["all_mapped"],
+        "warnings": errors if errors else None,
     }
+
+
+def process_uploaded_document(file_path: str, filename: str = "", api_key: Optional[str] = None) -> dict:
+    """Compatibility wrapper for processing a single document."""
+    fname = filename or os.path.basename(file_path)
+    return process_multiple_documents([(file_path, fname)], api_key=api_key)
 
 
 def create_report_workbooks(invoices: list[dict], prefix: str = "REPORT") -> dict:

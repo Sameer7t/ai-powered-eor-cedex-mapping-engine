@@ -17,7 +17,9 @@ from data_loader import get_cedex_sheet
 df_tn = get_cedex_sheet("TN")
 df_gp = get_cedex_sheet("GP")
 
-def cedex_mapping(normal_job_dict, container_route="tank"):
+def cedex_mapping(normal_job_dict, container_route="tank", **kwargs):
+    if "route" in kwargs:
+        container_route = kwargs["route"]
     # Pull fresh data from human memory files - route-specific (dry vs tank)
     route_files = get_mapping_files(container_route)
     human_component_mapping = read_mapping_file(route_files["component"])

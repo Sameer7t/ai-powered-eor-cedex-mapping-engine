@@ -184,36 +184,7 @@ body {
   color: var(--text-muted);
 }
 
-.quick-samples {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 
-.samples-label {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-.sample-chip {
-  padding: 5px 12px;
-  font-size: 0.78rem;
-  font-weight: 500;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.sample-chip:hover {
-  background: var(--bg-hover);
-  border-color: var(--text-secondary);
-  color: var(--text-primary);
-}
 
 /* Processing Banner */
 .processing-bar {

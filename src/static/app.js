@@ -177,9 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 5. 1-Click Demo Handlers
-  runTankDemoBtn.addEventListener('click', () => runDemo('tank'));
-  runDryDemoBtn.addEventListener('click', () => runDemo('dry'));
+  // 5. 1-Click Demo Handlers (if present)
+  if (runTankDemoBtn) runTankDemoBtn.addEventListener('click', () => runDemo('tank'));
+  if (runDryDemoBtn) runDryDemoBtn.addEventListener('click', () => runDemo('dry'));
 
   async function runDemo(sampleType) {
     const title = sampleType === 'tank' ? 'Tank Container (22K1)' : 'Dry Cargo Box (42G1)';

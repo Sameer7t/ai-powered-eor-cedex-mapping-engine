@@ -61,20 +61,20 @@
               <span class="stat-val" id="metricContainers">0</span>
             </div>
             <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">Mapped</span>
+            <button class="stat-btn active" id="btnFilterAll" type="button" title="View all rows">
+              <span class="stat-label">All Rows</span>
+              <span class="stat-val" id="metricTotal">0</span>
+            </button>
+            <div class="stat-divider"></div>
+            <button class="stat-btn" id="btnFilterMapped" type="button" title="Filter to mapped rows only">
+              <span class="stat-label">Mapped Rows</span>
               <span class="stat-val text-success" id="metricSuccess">0</span>
-            </div>
+            </button>
             <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">Review Needed</span>
+            <button class="stat-btn" id="btnFilterReview" type="button" title="Filter to review needed rows only">
+              <span class="stat-label">Review Needed Rows</span>
               <span class="stat-val text-warning" id="metricReview">0</span>
-            </div>
-            <div class="stat-divider"></div>
-            <div class="stat-item">
-              <span class="stat-label">Confidence</span>
-              <span class="stat-val" id="metricConfidence">--</span>
-            </div>
+            </button>
           </div>
 
           <div class="export-group">

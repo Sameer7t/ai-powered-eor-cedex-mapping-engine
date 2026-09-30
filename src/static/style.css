@@ -251,6 +251,37 @@ body {
   flex-direction: column;
 }
 
+.stat-btn {
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 4px 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.stat-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.stat-btn.active {
+  background: var(--bg-hover);
+  border-color: var(--blue);
+}
+
+.stat-btn.active#btnFilterMapped {
+  border-color: var(--green);
+}
+
+.stat-btn.active#btnFilterReview {
+  border-color: var(--amber);
+}
+
 .stat-label {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -273,6 +304,43 @@ body {
 
 .text-success { color: var(--green) !important; }
 .text-warning { color: var(--amber) !important; }
+
+/* Grouped Row Sections */
+.rows-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.rows-section + .rows-section {
+  border-top: 1px solid var(--border);
+}
+
+.rows-section-header {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.rows-section-header.warning-header {
+  background: rgba(210, 153, 34, 0.08);
+  color: var(--amber);
+}
+
+.rows-section-header.success-header {
+  background: rgba(63, 185, 80, 0.08);
+  color: var(--green);
+}
+
+.rows-section-sub {
+  font-size: 0.7rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
 
 .export-group {
   display: flex;

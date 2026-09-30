@@ -20,13 +20,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const resultsSection = document.getElementById('resultsSection');
   const metricContainers = document.getElementById('metricContainers');
+  const metricTotal = document.getElementById('metricTotal');
   const metricSuccess = document.getElementById('metricSuccess');
   const metricReview = document.getElementById('metricReview');
-  const metricConfidence = document.getElementById('metricConfidence');
+
+  const btnFilterAll = document.getElementById('btnFilterAll');
+  const btnFilterMapped = document.getElementById('btnFilterMapped');
+  const btnFilterReview = document.getElementById('btnFilterReview');
 
   const downloadSuccessBtn = document.getElementById('downloadSuccessBtn');
   const downloadFailedBtn = document.getElementById('downloadFailedBtn');
   const invoicesContainer = document.getElementById('invoicesContainer');
+
+  let currentFilter = 'all'; // 'all' | 'mapped' | 'review'
 
   // Review Modal Elements
   const reviewModal = document.getElementById('reviewModal');
@@ -86,6 +92,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   checkHealth();
   fetchReferenceCounts();
+
+  // Row Filter Handlers
+  if (btnFilterAll) {
+    btnFilterAll.addEventListener('click', () => setRowFilter('all'));
+  }
+  if (btnFilterMapped) {
+    btnFilterMapped.addEventListener('click', () => setRowFilter('mapped'));
+  }
+  if (btnFilterReview) {
+    btnFilterReview.addEventListener('click', () => setRowFilter('review'));
+  }
+
+  function setRowFilter(filter) {
+    currentFilter = filter;
+    if (btnFilterAll) btnFilterAll.classList.toggle('active', filter === 'all');
+    if (btnFilterMapped) btnFilterMapped.classList.toggle('active', filter === 'mapped');
+    if (btnFilterReview) btnFilterReview.classList.toggle('active', filter === 'review');
+    renderInvoicesList(currentInvoices);
+  }
 
   // Save session API key
   if (saveApiKeyBtn) {
@@ -245,16 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
     metricSuccess.textContent = result.success_count || 0;
     metricReview.textContent = result.review_count || 0;
 
-    // Overall Confidence
-    if (currentInvoices.length > 0) {
-      const avgScore = (
-        currentInvoices.reduce((acc, inv) => acc + (inv.confidence_score || 0.8), 0) / currentInvoices.length
-      ).toFixed(2);
-      metricConfidence.textContent = `${Math.round(avgScore * 100)}%`;
-    } else {
-      metricConfidence.textContent = '100%';
-    }
-
     // Recalculate metrics and dynamic export files
     syncMetricsAndExports(result);
 
@@ -283,13 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    if (metricTotal) metricTotal.textContent = totalJobs;
     metricSuccess.textContent = mappedJobs;
     metricReview.textContent = reviewNeeded;
-
-    if (totalJobs > 0) {
-      const pct = Math.round((mappedJobs / totalJobs) * 100);
-      metricConfidence.textContent = `${pct}%`;
-    }
 
     // If initialResult already gave report files and no subsequent edits happened
     if (initialResult && initialResult.success_report_file) {
@@ -355,93 +366,171 @@ document.addEventListener('DOMContentLoaded', () => {
       card.className = 'invoice-card';
 
       const routePillClass = inv.route === 'tank' ? 'pill-tank' : 'pill-dry';
-      const hasReview = inv.review_needed_count > 0;
+
+      const allJobs = inv.jobs || [];
+      const reviewJobs = allJobs.filter(
+        job => !((job.status === 'mapped' || job.status === 'reviewed') && !job.needs_human_review)
+      );
+      const mappedJobs = allJobs.filter(
+        job => (job.status === 'mapped' || job.status === 'reviewed') && !job.needs_human_review
+      );
+
+      const hasReview = reviewJobs.length > 0;
       const statusPillClass = hasReview ? 'pill-warning' : 'pill-success';
-      const statusText = hasReview ? `${inv.review_needed_count} Needs Review` : 'Verified Mapped';
+      const statusText = hasReview ? `${reviewJobs.length} Needs Review` : 'Verified Mapped';
+
+      let sectionsHtml = '';
+      const showReview = (currentFilter === 'all' || currentFilter === 'review');
+      const showMapped = (currentFilter === 'all' || currentFilter === 'mapped');
+
+      if (showReview && (reviewJobs.length > 0 || currentFilter === 'review')) {
+        sectionsHtml += `
+          <div class="rows-section">
+            <div class="rows-section-header warning-header">
+              <span>⚠️ Review Needed Rows (${reviewJobs.length})</span>
+              <span class="rows-section-sub">Requires CEDEX code verification</span>
+            </div>
+            ${reviewJobs.length > 0 ? `
+              <div class="table-responsive">
+                <table class="jobs-table">
+                  <thead>
+                    <tr>
+                      <th>Job #</th>
+                      <th>Description</th>
+                      <th>LOCN</th>
+                      <th>CMP</th>
+                      <th>RPR</th>
+                      <th>DMG</th>
+                      <th>CEDEX Code</th>
+                      <th>Hours / Cost</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reviewTbody-${invIndex}"></tbody>
+                </table>
+              </div>
+            ` : `
+              <div style="padding: 12px 16px; color: var(--green); font-size: 0.8rem;">
+                ✓ All items in this container are mapped and verified.
+              </div>
+            `}
+          </div>
+        `;
+      }
+
+      if (showMapped && (mappedJobs.length > 0 || currentFilter === 'mapped')) {
+        sectionsHtml += `
+          <div class="rows-section">
+            <div class="rows-section-header success-header">
+              <span>✅ Mapped Rows (${mappedJobs.length})</span>
+              <span class="rows-section-sub">Verified CEDEX standards compliant</span>
+            </div>
+            ${mappedJobs.length > 0 ? `
+              <div class="table-responsive">
+                <table class="jobs-table">
+                  <thead>
+                    <tr>
+                      <th>Job #</th>
+                      <th>Description</th>
+                      <th>LOCN</th>
+                      <th>CMP</th>
+                      <th>RPR</th>
+                      <th>DMG</th>
+                      <th>CEDEX Code</th>
+                      <th>Hours / Cost</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="mappedTbody-${invIndex}"></tbody>
+                </table>
+              </div>
+            ` : `
+              <div style="padding: 12px 16px; color: var(--text-muted); font-size: 0.8rem;">
+                No mapped rows yet for this container.
+              </div>
+            `}
+          </div>
+        `;
+      }
 
       card.innerHTML = `
         <div class="invoice-header">
           <div class="invoice-title-group">
-            <span class="container-badge">${inv.container_id || 'UNKNOWN'}</span>
-            <span class="pill ${routePillClass}">${inv.route || 'tank'} route</span>
+            <span class="container-badge">${escapeHtml(inv.container_id || 'UNKNOWN')}</span>
+            <span class="pill ${routePillClass}">${escapeHtml(inv.route || 'tank')} route</span>
             <span class="pill ${statusPillClass}">${statusText}</span>
             ${inv.source_file ? `<span class="pill" style="background: var(--bg-hover); color: var(--text-muted); font-size: 0.68rem; text-transform: none;">📁 ${escapeHtml(inv.source_file)}</span>` : ''}
           </div>
           <div class="invoice-meta">
-            <div><strong>ISO Type:</strong> ${inv.container_type || '22K1'}</div>
-            <div><strong>Depot:</strong> ${inv.depot_name || 'Terminal'}</div>
-            <div><strong>Confidence:</strong> ${Math.round((inv.confidence_score || 0.8) * 100)}%</div>
+            <div><strong>ISO Type:</strong> ${escapeHtml(inv.container_type || '22K1')}</div>
+            <div><strong>Depot:</strong> ${escapeHtml(inv.depot_name || 'Terminal')}</div>
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="jobs-table">
-            <thead>
-              <tr>
-                <th>Job #</th>
-                <th>Description</th>
-                <th>LOCN</th>
-                <th>CMP</th>
-                <th>RPR</th>
-                <th>DMG</th>
-                <th>CEDEX Code</th>
-                <th>Hours / Cost</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="jobsTbody-${invIndex}">
-            </tbody>
-          </table>
-        </div>
+        ${sectionsHtml}
       `;
 
       invoicesContainer.appendChild(card);
-      const tbody = document.getElementById(`jobsTbody-${invIndex}`);
 
-      (inv.jobs || []).forEach((job) => {
-        const tr = document.createElement('tr');
-        const isMapped = job.status === 'mapped' || job.status === 'reviewed';
-        const statusBadge = isMapped
-          ? `<span class="pill pill-success">Mapped</span>`
-          : `<span class="pill pill-warning">Review Needed</span>`;
+      const reviewTbody = document.getElementById(`reviewTbody-${invIndex}`);
+      if (reviewTbody && reviewJobs.length > 0) {
+        populateJobRows(reviewJobs, reviewTbody, inv);
+      }
 
-        const cedexDisplay = job.cedex_code
-          ? `<span class="cedex-full-code">${job.cedex_code}</span>`
-          : `<span style="color: var(--text-muted); font-size: 0.8rem;">--</span>`;
+      const mappedTbody = document.getElementById(`mappedTbody-${invIndex}`);
+      if (mappedTbody && mappedJobs.length > 0) {
+        populateJobRows(mappedJobs, mappedTbody, inv);
+      }
+    });
+  }
 
-        const actionBtn = isMapped
-          ? `<span class="btn-verified">Mapped</span>`
-          : `<button class="btn-review review-trigger-btn">Review &amp; Map</button>`;
+  function populateJobRows(jobs, tbody, inv) {
+    jobs.forEach((job) => {
+      const tr = document.createElement('tr');
+      const isMapped = (job.status === 'mapped' || job.status === 'reviewed') && !job.needs_human_review;
+      const statusBadge = isMapped
+        ? `<span class="pill pill-success">Mapped</span>`
+        : `<span class="pill pill-warning">Review Needed</span>`;
 
-        const manhours = job.manhour || 0;
-        const totalCost = (job.labour_cost || 0) + (job.material_cost_aed || 0);
+      const cedexDisplay = job.cedex_code
+        ? `<span class="cedex-full-code">${escapeHtml(job.cedex_code)}</span>`
+        : `<span style="color: var(--text-muted); font-size: 0.8rem;">--</span>`;
 
-        tr.innerHTML = `
-          <td><strong>#${job.job_id || 1}</strong></td>
-          <td class="job-desc-cell">
-            <div class="raw-desc">${escapeHtml(job.job_description || '')}</div>
-            ${job.display_description && job.display_description !== job.job_description ? `<div class="translated-desc">🔤 ${escapeHtml(job.display_description)}</div>` : ''}
-          </td>
-          <td><span class="code-pill">${job.location || '--'}</span></td>
-          <td><span class="code-pill">${job.component || '--'}</span></td>
-          <td><span class="code-pill">${job.repair || '--'}</span></td>
-          <td><span class="code-pill">${job.damage || '--'}</span></td>
-          <td>${cedexDisplay}</td>
-          <td>${manhours}h &bull; $${totalCost.toFixed(2)}</td>
-          <td>${statusBadge}</td>
-          <td>${actionBtn}</td>
-        `;
+      const actionBtn = isMapped
+        ? `<span class="btn-verified">Mapped</span>`
+        : `<button class="btn-review review-trigger-btn">Review &amp; Map</button>`;
 
-        if (!isMapped) {
-          const btn = tr.querySelector('.review-trigger-btn');
+      const manhours = job.manhour || 0;
+      const totalCost = (job.labour_cost || 0) + (job.material_cost_aed || 0);
+
+      tr.innerHTML = `
+        <td><strong>#${job.job_id || 1}</strong></td>
+        <td class="job-desc-cell">
+          <div class="raw-desc">${escapeHtml(job.job_description || '')}</div>
+          ${job.display_description && job.display_description !== job.job_description ? `<div class="translated-desc">🔤 ${escapeHtml(job.display_description)}</div>` : ''}
+        </td>
+        <td><span class="code-pill">${escapeHtml(job.location || '--')}</span></td>
+        <td><span class="code-pill">${escapeHtml(job.component || '--')}</span></td>
+        <td><span class="code-pill">${escapeHtml(job.repair || '--')}</span></td>
+        <td><span class="code-pill">${escapeHtml(job.damage || '--')}</span></td>
+        <td>${cedexDisplay}</td>
+        <td>${manhours}h &bull; $${totalCost.toFixed(2)}</td>
+        <td>${statusBadge}</td>
+        <td>${actionBtn}</td>
+      `;
+
+      if (!isMapped) {
+        const btn = tr.querySelector('.review-trigger-btn');
+        if (btn) {
           btn.addEventListener('click', () => {
             openReviewModal(job, inv);
           });
         }
+      }
 
-        tbody.appendChild(tr);
-      });
+      tbody.appendChild(tr);
     });
   }
 

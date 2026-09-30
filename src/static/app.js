@@ -335,8 +335,8 @@ document.addEventListener('DOMContentLoaded', () => {
           : `<span style="color: var(--text-muted); font-size: 0.8rem;">--</span>`;
 
         const actionBtn = isMapped
-          ? `<button class="btn btn-outline btn-sm" disabled style="opacity: 0.4;">Verified</button>`
-          : `<button class="btn btn-primary btn-sm review-trigger-btn">Review &amp; Learn</button>`;
+          ? `<span class="btn-verified">Mapped</span>`
+          : `<button class="btn-review review-trigger-btn">Review &amp; Map</button>`;
 
         const manhours = job.manhour || 0;
         const totalCost = (job.labour_cost || 0) + (job.material_cost_aed || 0);

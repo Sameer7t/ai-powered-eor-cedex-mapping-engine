@@ -31,7 +31,7 @@ class ServerApiTests(unittest.TestCase):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertIn("CEDEX", response.text)
-        self.assertIn("AI-Powered EOR Processing", response.text)
+        self.assertIn("EOR CEDEX", response.text)
 
     def test_process_dry_demo_sample(self):
         response = self.client.post("/api/process-demo", json={"sample_type": "dry"})

@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 from google.genai import types
 from schemas import DescriptionBreakdowns
 
-load_dotenv()
-client = genai.Client()
+from ai_client import client
 
 
 def process_normal_jobs(job_description: list):

@@ -1,15 +1,19 @@
 import os
 import pandas as pd
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ISO_MASTER_FILE = os.path.join(BASE_DIR, "..", "data", "ifgEquipmentISOGroup.xlsx")
+from data_loader import get_iso_equipment_group
 
 try:
-    df_iso = pd.read_excel(ISO_MASTER_FILE, engine='openpyxl')
-    active_codes = df_iso[df_iso['Active'] == True]['Current ISO Code'].dropna()
-    VALID_ISO_CODES = set(active_codes.astype(str).str.strip().str.upper())
+    df_iso = get_iso_equipment_group()
+    if 'Active' in df_iso.columns and 'Current ISO Code' in df_iso.columns:
+        active_codes = df_iso[df_iso['Active'] == True]['Current ISO Code'].dropna()
+        VALID_ISO_CODES = set(active_codes.astype(str).str.strip().str.upper())
+    elif 'Current ISO Code' in df_iso.columns:
+        VALID_ISO_CODES = set(df_iso['Current ISO Code'].dropna().astype(str).str.strip().str.upper())
+    else:
+        VALID_ISO_CODES = set()
 except Exception as e:
-    print(f"Warning: Could not load ISO Master file: {e}")
+    print(f"Warning: Could not load ISO Master data: {e}")
     VALID_ISO_CODES = set()
 
 ISO_6346_MAPPING = {

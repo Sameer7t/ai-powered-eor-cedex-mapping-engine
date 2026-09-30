@@ -50,9 +50,7 @@ REPAIR_FILE = os.path.join(MAPPING_DIR, "human_repair_mapping.json")
 DAMAGE_FILE = os.path.join(MAPPING_DIR, "human_damage_mapping.json")
 
 SAMPLES_DIR = "samples"
-
-df1 = pd.read_excel(".\\data\\CEDEX Master.xlsx", sheet_name="TN")
-
+# Container routing definitions
 TANK_TYPES = {
     "IMO 1",
     "IMO 2",

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Powered EOR Processing &amp; CEDEX Mapping Engine</title>
+  <meta name="description" content="AI-assisted logistics document processing engine that extracts structured repair data from container Estimate of Repair (EOR) documents and standardizes it into CEDEX/ISO-aligned codes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="dark-theme">
+  <!-- Background Glow & Grid -->
+  <div class="glow-bg glow-primary"></div>
+  <div class="glow-bg glow-secondary"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="app-layout">
+    <!-- Header / Navbar -->
+    <header class="app-header" id="appHeader">
+      <div class="brand-group">
+        <div class="brand-logo-badge">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+          </svg>
+          <span class="live-indicator-dot" title="Engine Online"></span>
+        </div>
+        <div>
+          <div class="brand-title">CEDEX<span class="highlight">.AI</span> Engine</div>
+          <div class="brand-subtitle">ISO 9897 Container Standardization</div>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <div class="status-badge" id="aiStatusBadge">
+          <span class="badge-dot" id="aiBadgeDot"></span>
+          <span id="aiStatusText">Checking Gemini API...</span>
+        </div>
+        <div class="status-badge info-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span id="referenceCountBadge">2,100+ Master Codes</span>
+        </div>
+        <a href="https://github.com/Sameer7t/ai-powered-eor-cedex-mapping-engine" target="_blank" rel="noopener noreferrer" class="btn-github" id="githubRepoLink">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="main-container">
+      <!-- Hero Banner -->
+      <section class="hero-section" id="heroSection">
+        <div class="hero-tag">
+          <span class="pulse-spark">✨</span> LangGraph &amp; Gemini 3.5 AI Pipeline
+        </div>
+        <h1 class="hero-title">AI-Powered EOR Processing &amp; CEDEX Mapping Engine</h1>
+        <p class="hero-subtitle">
+          Instantly convert unstructured container repair estimates into standardized ISO/CEDEX codes 
+          (Component, Repair, Damage, Location) with dual Tank &amp; Dry routing and Human-in-the-Loop review.
+        </p>
+      </section>
+
+      <!-- Document Ingestion & Demo Trigger Section -->
+      <section class="ingestion-section card" id="ingestionCard">
+        <div class="card-header">
+          <div class="header-left">
+            <span class="icon-circle">📂</span>
+            <div>
+              <h2 class="section-heading">Estimate Ingestion &amp; Live Evaluation</h2>
+              <p class="section-desc">Upload a PDF or Excel estimate, or launch an instant synthetic sandbox test.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="ingestion-grid">
+          <!-- Dropzone -->
+          <div class="dropzone" id="fileDropzone">
+            <input type="file" id="fileInput" accept=".pdf,.xlsx,.xls" hidden>
+            <div class="dropzone-content">
+              <div class="upload-icon-container">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="dropzone-title">Drag &amp; Drop EOR Document</div>
+              <div class="dropzone-sub">Supports .pdf (layout text extraction) and .xlsx / .xls workbooks</div>
+              <button class="btn btn-secondary btn-sm" id="browseBtn" type="button">Select File from Computer</button>
+            </div>
+          </div>
+
+          <!-- Synthetic Demos -->
+          <div class="demo-box">
+            <div class="demo-box-header">
+              <span class="sparkle-icon">⚡</span>
+              <span>1-Click Cloud Demo Sandboxes</span>
+            </div>
+            <p class="demo-box-text">
+              Test full extraction, route classification, and CEDEX validation immediately without needing private customer files:
+            </p>
+            <div class="demo-btn-group">
+              <button class="btn btn-demo" id="runTankDemoBtn" type="button">
+                <div class="btn-demo-icon">🛢️</div>
+                <div class="btn-demo-content">
+                  <div class="demo-title">Run Tank Container (22K1)</div>
+                  <div class="demo-sub">Manlid gasket, discharge valve, cleaning, pressure gauge</div>
+                </div>
+              </button>
+
+              <button class="btn btn-demo" id="runDryDemoBtn" type="button">
+                <div class="btn-demo-icon">📦</div>
+                <div class="btn-demo-content">
+                  <div class="demo-title">Run Dry Cargo Box (42G1)</div>
+                  <div class="demo-sub">Side panel dent, corner post, door gasket</div>
+                </div>
+              </button>
+            </div>
+
+            <!-- Optional Custom Gemini Key Input for Demo users -->
+            <details class="api-key-accordion" id="apiKeyDetails">
+              <summary>Need to supply your own Gemini API key for this session?</summary>
+              <div class="api-key-input-wrapper">
+                <input type="password" id="customApiKeyInput" placeholder="AIzaSy... (Gemini API Key)" class="text-input">
+                <button class="btn btn-outline btn-sm" id="saveApiKeyBtn" type="button">Apply Key</button>
+              </div>
+              <small class="key-hint">Keys are only held in memory for this session and never logged.</small>
+            </details>
+          </div>
+        </div>
+
+        <!-- Processing Status Banner -->
+        <div class="processing-banner hidden" id="processingBanner">
+          <div class="spinner"></div>
+          <div class="processing-info">
+            <div class="processing-title" id="processingTitle">Running CEDEX Pipeline...</div>
+            <div class="processing-subtitle" id="processingSubtitle">Extracting container data, classifying route, and mapping CEDEX codes...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results & Metrics Section -->
+      <section class="results-section hidden" id="resultsSection">
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon blue-glow">🚢</div>
+            <div>
+              <div class="metric-label">Processed Containers</div>
+              <div class="metric-value" id="metricContainers">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon green-glow">✅</div>
+            <div>
+              <div class="metric-label">Mapped Successfully</div>
+              <div class="metric-value" id="metricSuccess">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon amber-glow">⚠️</div>
+            <div>
+              <div class="metric-label">Needs Review / DLQ</div>
+              <div class="metric-value" id="metricReview">0</div>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon purple-glow">🎯</div>
+            <div>
+              <div class="metric-label">Confidence Score</div>
+              <div class="metric-value" id="metricConfidence">--</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Download Action Toolbar -->
+        <div class="download-bar card">
+          <div class="download-bar-left">
+            <div class="download-title">Generated Master Reports</div>
+            <div class="download-desc">Export verified estimates directly to Excel workbooks for your ERP / billing.</div>
+          </div>
+          <div class="download-actions" id="downloadActions">
+            <button class="btn btn-success" id="downloadSuccessBtn" type="button" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download Success Report (.xlsx)</span>
+            </button>
+            <button class="btn btn-warning" id="downloadFailedBtn" type="button" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Download DLQ / Review Report (.xlsx)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Invoices & Estimates Container -->
+        <div id="invoicesContainer" class="invoices-list"></div>
+      </section>
+
+      <!-- Reference Code Explorer Section -->
+      <section class="reference-section card" id="referenceSection">
+        <div class="card-header">
+          <div class="header-left">
+            <span class="icon-circle">📖</span>
+            <div>
+              <h2 class="section-heading">ISO / CEDEX Standard Specifications</h2>
+              <p class="section-desc">Dual-engine architecture for Tank (TN) and Dry (GP) container operations.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="specs-grid">
+          <div class="spec-card">
+            <div class="spec-title">Tank Route (ISO 6346 / TN Sheet)</div>
+            <div class="spec-item"><strong>Containers:</strong> IMO 1, IMO 2, IMO 3, 22K1, 22T1</div>
+            <div class="spec-item"><strong>Classifications:</strong> Package cleaning, Leak test, Normal repairs</div>
+            <div class="spec-item"><strong>Mapping Logic:</strong> Gemini 3.5 structured reasoning + vector caching</div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-title">Dry Route (GP Sheet / Rule Engine)</div>
+            <div class="spec-item"><strong>Containers:</strong> 22G1, 42G1, 45G1, 20DV, 40HC, L5G1</div>
+            <div class="spec-item"><strong>Multi-language:</strong> English, Turkish, Russian vocabulary parser</div>
+            <div class="spec-item"><strong>Codes:</strong> 4-char Location, Component, Repair, Damage validation</div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-title">Human-in-the-Loop Active Learning</div>
+            <div class="spec-item"><strong>Memory:</strong> Route-specific learned mappings (.json)</div>
+            <div class="spec-item"><strong>Validation:</strong> Enforces CEDEX Master existence before saving</div>
+            <div class="spec-item"><strong>Audit Trail:</strong> Segregates unmapped rows into Dead Letter Queue</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div>AI-Powered EOR Processing &amp; CEDEX Mapping Engine &bull; Portfolio Edition</div>
+      <div class="footer-links">
+        <a href="/docs" target="_blank">FastAPI Swagger Docs</a>
+        <span>&bull;</span>
+        <a href="/api/health" target="_blank">Health Check API</a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Human-in-the-Loop Review Modal -->
+  <div class="modal-overlay hidden" id="reviewModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Human-in-the-Loop Correction</div>
+        <button class="modal-close-btn" id="closeModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">
+          Assign verified CEDEX codes for this repair item. Approved combinations are permanently learned for future automated routing.
+        </p>
+
+        <div class="job-context-box">
+          <div class="context-row">
+            <span class="context-label">Job ID:</span>
+            <span class="context-val" id="modalJobId">#1</span>
+          </div>
+          <div class="context-row">
+            <span class="context-label">Container:</span>
+            <span class="context-val" id="modalContainerId">--</span>
+          </div>
+          <div class="context-row">
+            <span class="context-label">Route:</span>
+            <span class="context-val" id="modalRoute">tank</span>
+          </div>
+          <div class="context-row">
+            <span class="context-label">Original Description:</span>
+            <span class="context-val" id="modalDescription">--</span>
+          </div>
+        </div>
+
+        <form id="reviewForm" class="review-form">
+          <div class="form-group">
+            <label for="modalLocationInput">4-Part CEDEX Code: <code>LOCATION COMPONENT REPAIR DAMAGE</code></label>
+            <input type="text" id="modalCodeInput" class="text-input" placeholder="e.g. AFXX YXT AX DY or LX02 PSC RP DT" required>
+            <small class="form-help">Format: 4 space-separated codes (Location Component Repair Damage)</small>
+          </div>
+
+          <div class="modal-feedback hidden" id="modalFeedback"></div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelReviewBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveReviewBtn">Save &amp; Train Memory</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

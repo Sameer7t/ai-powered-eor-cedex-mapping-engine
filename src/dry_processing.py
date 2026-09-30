@@ -11,7 +11,9 @@ from custom_maping_by_human import (
 #          Location, Formula, Formula Desc., Favourite
 # NOTE: Location cells can hold MULTIPLE space-separated 2-char codes, e.g. "BX BR BL",
 # not one 4-char code like the tank (TN) sheet - see location_prefix_matches() below.
-df_gp = pd.read_excel(".\\data\\CEDEX Master.xlsx", sheet_name="GP")
+from data_loader import get_cedex_sheet
+
+df_gp = get_cedex_sheet("GP")
 
 
 def location_prefix_matches(cell_value, prefix_2char):

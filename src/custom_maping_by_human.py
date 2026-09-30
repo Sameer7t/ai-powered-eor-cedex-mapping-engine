@@ -51,11 +51,10 @@ for _route in ("tank", "dry"):
             with open(_f, "w") as _file:
                 json.dump({}, _file)
 
-try:
-    df_tn = pd.read_excel(os.path.join(DATA_DIR, "CEDEX Master.xlsx"), sheet_name="TN")
-    df_gp = pd.read_excel(os.path.join(DATA_DIR, "CEDEX Master.xlsx"), sheet_name="GP")
-except Exception as e:
-    print(f"Error loading CEDEX Master: {e}")
+from data_loader import get_cedex_sheet
+
+df_tn = get_cedex_sheet("TN")
+df_gp = get_cedex_sheet("GP")
 
 
 def is_valid_damage_code(code: str) -> bool:

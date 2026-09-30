@@ -11,9 +11,11 @@ from custom_maping_by_human import (
     get_mapping_files,
 )
 
+from data_loader import get_cedex_sheet
+
 # Load both sheets into memory globally
-df_tn = pd.read_excel(".\\data\\CEDEX Master.xlsx", sheet_name="TN")
-df_gp = pd.read_excel(".\\data\\CEDEX Master.xlsx", sheet_name="GP")
+df_tn = get_cedex_sheet("TN")
+df_gp = get_cedex_sheet("GP")
 
 def cedex_mapping(normal_job_dict, container_route="tank"):
     # Pull fresh data from human memory files - route-specific (dry vs tank)

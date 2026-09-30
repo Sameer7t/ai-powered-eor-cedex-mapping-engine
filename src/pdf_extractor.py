@@ -5,12 +5,7 @@ import json
 import pandas as pd
 from schemas import DepotSchema, JobCategoryList, MultipleEstimates
 from dotenv import load_dotenv
-
-df = pd.read_excel(".\\data\\CEDEX Master.xlsx", sheet_name="TN")
-
-
-load_dotenv()  #
-client = genai.Client()
+from ai_client import client
 
 
 # def pdf_extractor(pdf) -> str:

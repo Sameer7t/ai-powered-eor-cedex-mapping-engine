@@ -1,9 +1,7 @@
 import os
 import json
 import numpy as np
-from google import genai
-
-client = genai.Client()
+from ai_client import client
 
 # Define the cache file path alongside your other mappings
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

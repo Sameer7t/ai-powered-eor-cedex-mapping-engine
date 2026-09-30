@@ -1,0 +1,15 @@
+services:
+  # AI-Powered EOR Processing & CEDEX Mapping Engine Web Service
+  - type: web
+    name: ai-powered-eor-cedex-engine
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: GEMINI_API_KEY
+        sync: false

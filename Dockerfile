@@ -25,11 +25,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application source code and reference mappings
 COPY src/ ./src/
 COPY data/ ./data/
-COPY mappings/ ./mappings/
 COPY samples/ ./samples/
 
-# Create output directory for generated Excel reports
-RUN mkdir -p data/output src/mappings
+# Create output directory for generated Excel reports and copy canonical mappings
+RUN mkdir -p data/output && \
+    cp -r src/mappings ./mappings
 
 EXPOSE 8000
 
